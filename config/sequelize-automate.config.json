@@ -1,0 +1,16 @@
+{
+  "dbOptions": {
+    "database": "blog_db",
+    "username": "root",
+    "password": "970716",
+    "dialect": "mysql",
+    "host": "localhost",
+    "port": 3306,
+    "logging": false
+  },
+  "options": {
+    "type": "egg",
+    "dir": "./app/model",
+    "timestamps": false
+  }
+}

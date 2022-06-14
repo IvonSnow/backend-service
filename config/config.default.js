@@ -10,7 +10,9 @@ module.exports = appInfo => {
 	 * built-in config
 	 * @type {Egg.EggAppConfig}
 	 **/
-	const config = (exports = {})
+	const config = (exports = {
+		privateKey: 'xyf0716',
+	})
 
 	// use for cookie sign key, should change to your own and keep security
 	config.keys = appInfo.name + '_1651132345813_7122'
@@ -27,8 +29,8 @@ module.exports = appInfo => {
 	// host 对应的是docker-compose中service
 	config.sequelize = {
 		dialect: 'mysql',
-		database: 'webapp_db',
-		host: 'db',
+		database: 'blog_db',
+		host: 'localhost',
 		port: '3306',
 		username: 'root',
 		password: '970716',
@@ -42,6 +44,5 @@ module.exports = appInfo => {
 	return {
 		...config,
 		...userConfig,
-		privateKey: 'xyf0716',
 	}
 }

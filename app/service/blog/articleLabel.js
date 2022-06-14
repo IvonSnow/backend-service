@@ -1,5 +1,5 @@
 const { Service } = require('egg')
-const { Op } = require("sequelize");
+const { Op } = require('sequelize')
 
 class LabelManageService extends Service {
 	// 获取标签列表
@@ -7,7 +7,21 @@ class LabelManageService extends Service {
 		const { ctx } = this
 
 		const list = await ctx.model.Articlelabels.findAll({
-			order: [['updated_at', 'DESC']]
+			order: [['updated_at', 'DESC']],
+		})
+		return list
+	}
+
+	// 获取推荐的便签
+	async recommend() {
+		const { ctx } = this
+
+		const list = await ctx.model.Articlelabels.findAll({
+			order: [
+				['article_count', 'DESC'],
+				['updated_at', 'DESC'],
+			],
+			limit: 15,
 		})
 		return list
 	}
@@ -18,7 +32,7 @@ class LabelManageService extends Service {
 
 		const list = await ctx.model.Articlelabels.findAll({
 			order: [['article_count', 'DESC']],
-			attributes: ['name']
+			attributes: ['name'],
 		})
 		return list
 	}
@@ -42,7 +56,7 @@ class LabelManageService extends Service {
 	}
 	// 删除
 	async delete(id) {
-		console.log(id);
+		console.log(id)
 		const res = await this.ctx.model.Articlelabels.destroy({
 			where: {
 				id,
@@ -54,7 +68,7 @@ class LabelManageService extends Service {
 
 	// 检测标签是否存在，不存在则新建
 	async checkLabelsExistence(labelsStr) {
-		if(!labelsStr) return false
+		if (!labelsStr) return false
 
 		const labels = labelsStr.split(',')
 		labels.forEach(async label => {
@@ -64,10 +78,10 @@ class LabelManageService extends Service {
 				},
 			})
 
-			if(!res) {
+			if (!res) {
 				// 标签不存在则新建
 				this.ctx.model.Articlelabels.create({
-					name: label
+					name: label,
 				})
 			}
 		})

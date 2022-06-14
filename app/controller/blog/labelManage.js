@@ -11,19 +11,27 @@ class LabelManageController extends BaseController {
 		this.success(true, '成功', list ? list : [])
 	}
 
+	// 推荐
+	async recommend() {
+		const { ctx } = this
+
+		let list = await ctx.service.blog.articleLabel.recommend()
+		this.success(true, '成功', list ? list : [])
+	}
+
 	// 返回所有标签名
 	async all() {
 		const { ctx } = this
 		let message = ''
 
 		let list = await ctx.service.blog.articleLabel.all().catch(err => {
-			console.error(err);
+			console.error(err)
 			message = JSON.stringify(err)
 		})
 
-		if(!message) {
+		if (!message) {
 			this.success(true, '成功', list ? list : [])
-		}else {
+		} else {
 			this.success(false, message)
 		}
 	}
@@ -35,14 +43,14 @@ class LabelManageController extends BaseController {
 
 		try {
 			ctx.validate({
-				name: {type: 'string'},
+				name: { type: 'string' },
 			})
-		}catch(err) {
-			console.error(err);
+		} catch (err) {
+			console.error(err)
 			message = JSON.stringify(err.errors)
 		}
 
-		if(!message) {
+		if (!message) {
 			const res = await service.blog.articleLabel.add(ctx.request.body).catch(err => {
 				if (err && err.errors[0] && err.errors[0].message) {
 					message = err.errors[0].message
@@ -53,7 +61,7 @@ class LabelManageController extends BaseController {
 				return this.success(true, '新建成功')
 			}
 		}
-		
+
 		this.success(false, message)
 	}
 	// 更新
@@ -63,25 +71,26 @@ class LabelManageController extends BaseController {
 
 		try {
 			ctx.validate({
-				id: {type: 'number'},
-				name: {type: 'string'}
+				id: { type: 'number' },
+				name: { type: 'string' },
 			})
-		}catch(err) {
-			console.error(err.errors);
+		} catch (err) {
+			console.error(err.errors)
 			message = JSON.stringify(err.errors)
 		}
 
-		if(!message) {	
-			const res = await service.blog.articleLabel.update(ctx.request.body, ctx.request.body.id).catch(err => {
-				message = JSON.stringify(err)
-			})
+		if (!message) {
+			const res = await service.blog.articleLabel
+				.update(ctx.request.body, ctx.request.body.id)
+				.catch(err => {
+					message = JSON.stringify(err)
+				})
 			if (res) {
 				return this.success(true, '更新成功')
 			}
 		}
 
 		this.success(false, message)
-		
 	}
 	// 删除
 	async delete() {
@@ -89,29 +98,30 @@ class LabelManageController extends BaseController {
 		let message = ''
 
 		try {
-			ctx.validate({
-				id: {type: 'number', required: true, desc: '标签id'}
-			}, ctx.query)
-		}catch(err) {
-			console.error(err.errors);
+			ctx.validate(
+				{
+					id: { type: 'number', required: true, desc: '标签id' },
+				},
+				ctx.query
+			)
+		} catch (err) {
+			console.error(err.errors)
 			message = JSON.stringify(err.errors)
 		}
-		
-		if(!message) {
+
+		if (!message) {
 			const res = await service.blog.articleLabel.delete(ctx.query.id).catch(err => {
 				message = JSON.stringify(err)
 			})
 
 			if (res) {
 				return this.success(true, '删除成功')
-			}else {
+			} else {
 				return this.success(false, '标签不存在')
 			}
-		}else {
+		} else {
 			this.success(false, message)
 		}
-
-		
 	}
 }
 

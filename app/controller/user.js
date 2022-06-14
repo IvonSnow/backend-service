@@ -1,75 +1,73 @@
-'use strict';
+'use strict'
 
-const BaseController = require('../core/baseController');
+const BaseController = require('../core/baseController')
 const jwt = require('jsonwebtoken')
 
 class UserController extends BaseController {
-  async csrf() {
-    const {ctx} = this
+	async login() {
+		const { ctx, service } = this
 
-    this.success(true, '获取成功', {csrf: ctx.csrf})
-  }
+		try {
+			if (ctx.request.body.loginType === 'account') {
+				ctx.validate({
+					username: { type: 'string' },
+					password: { type: 'string' },
+				})
 
-  async login() {
-    const { ctx, service } = this;
+				const res = await service.user.login(ctx.request.body)
+				if (res.status) {
+					// 登陆成功
+					// 调用 rotateCsrfSecret 刷新用户的 CSRF token,防止新用户使用老用户的csrf
+					ctx.rotateCsrfSecret()
+					this.success(true, res.message, res.token)
+				} else {
+					this.success(false, res.message)
+				}
+			} else {
+				this.success(false, '未知登录方式')
+			}
+		} catch (err) {
+			console.error(err)
+			this.success(false, '登陆失败')
+		}
+	}
 
-    console.log(ctx.request.body);
+	async info() {
+		const { ctx, service, config } = this
+		if (ctx.authUser) {
+			let { uid } = ctx.authUser
 
-    try {
-      if(ctx.request.body.loginType === 'account') {
-        ctx.validate({
-          username: {type: 'string'},
-          password: {type: 'string'}
-        })
-  
-        const res = await service.user.login(ctx.request.body)
-        if(res.status) {        
-          this.success(true, '登陆成功', res.user)
-        }else {
-          this.success(false, res.message)
-        }
-      }
-    }catch(err) {
-      console.error(err);
-      this.success(false, '登陆失败')
-    }
-  }
+			let user = await ctx.model.Users.findOne({
+				where: {
+					user_id: uid,
+				},
+			})
 
-  async info() {
-    const { ctx, service, config } = this;
-    let token = ctx.headers.authorization.split(' ')[1]
-    console.log('authorization:', token);
+			let userInfo = {
+				name: user.name,
+				nickname: user.nickname,
+				avatar: user.avatar,
+				access: 'admin',
+			}
 
-    let {uid} = jwt.verify(token, config.privateKey);
+			this.success(true, '获取成功', userInfo)
+		} else {
+			console.error('无效用户')
+			ctx.redirect('/user/login')
+		}
+	}
 
-    let user = await ctx.model.Users.findOne({
-      where: {
-        user_id: uid
-      }
-    })
+	async currentUser() {
+		const { ctx } = this
 
-    let userInfo = {
-      name: user.name,
-      nickname: user.nickname,
-      avatar: user.avatar,
-      access: 'admin'
-    }
+		const user = ctx.model.Users.findOne({
+			where: {
+				name: ctx.query.name,
+			},
+		})
 
-    this.success(true, '获取成功', userInfo)
-  }
-
-  async currentUser () {
-    const {ctx} = this
-
-    const user = ctx.model.Users.findOne({
-      where: {
-        name: ctx.query.name
-      }
-    })
-
-    ctx.body = {}
-
-  }
+		ctx.body = {}
+	}
 }
 
-module.exports = UserController;
+module.exports = UserController

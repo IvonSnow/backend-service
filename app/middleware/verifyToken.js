@@ -1,11 +1,30 @@
+const jwt = require('jsonwebtoken')
+const moment = require('moment')
 module.exports = options => {
 	return async function verifyToken(ctx, next) {
-		console.log('verifyToken')
-
-		if (ctx.request.url !== '/api/user/csrf' && ctx.request.url !== '/api/user/login') {
-			// todo 验证token  可以根据host区别 前台还是青云
+		// 对于青云的登录页和前台的路由不进行token校验
+		if (ctx.request.url !== '/api/user/login' && !ctx.request.url.includes('/front/')) {
 			console.log('验证token')
-			console.log(ctx)
+			let isValid = false
+			const token = ctx?.header?.authorization?.split(' ')[1]
+			if (!token) ctx.redirect('/user/login')
+
+			try {
+				let decode = jwt.verify(token, ctx.app.config?.privateKey)
+				if (decode?.data?.uid) {
+					console.log(decode)
+					ctx['authUser'] = decode.data
+					isValid = true
+				} else {
+					throw new Error('无效token')
+				}
+			} catch (err) {
+				console.error(err)
+				isValid = false
+			}
+
+			// token无效则跳转登陆页面
+			if (!isValid) ctx.redirect('/user/login')
 		}
 
 		await next()

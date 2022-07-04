@@ -29,8 +29,8 @@ module.exports = appInfo => {
 	// host 对应的是docker-compose中service
 	config.sequelize = {
 		dialect: 'mysql',
-		database: 'blog_db',
-		host: 'localhost',
+		database: 'webapp_db',
+		host: 'db',
 		port: '3306',
 		username: 'root',
 		password: '970716',

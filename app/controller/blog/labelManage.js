@@ -6,97 +6,97 @@ class LabelManageController extends BaseController {
 	// 获取标签列表
 	async list() {
 		const { ctx } = this
+		let list = []
+		try {
+			list = await ctx.service.blog.articleLabel.list()
+		} catch (err) {
+			console.log(err)
+			return this.error('获取标签列表失败')
+		}
 
-		let list = await ctx.service.blog.articleLabel.list()
-		this.success(true, '成功', list ? list : [])
+		this.success('成功', list)
 	}
 
 	// 推荐
 	async recommend() {
 		const { ctx } = this
+		let list = []
+		try {
+			list = await ctx.service.blog.articleLabel.recommend()
+		} catch (err) {
+			console.log(err)
+			return this.error('获取推荐标签失败')
+		}
 
-		let list = await ctx.service.blog.articleLabel.recommend()
-		this.success(true, '成功', list ? list : [])
+		this.success('成功', list)
 	}
 
 	// 返回所有标签名
 	async all() {
 		const { ctx } = this
-		let message = ''
-
-		let list = await ctx.service.blog.articleLabel.all().catch(err => {
-			console.error(err)
-			message = JSON.stringify(err)
-		})
-
-		if (!message) {
-			this.success(true, '成功', list ? list : [])
-		} else {
-			this.success(false, message)
+		let list = []
+		try {
+			list = await ctx.service.blog.articleLabel.all()
+		} catch (err) {
+			console.log(err)
+			return this.error('获取所有标签名失败')
 		}
+
+		this.success('成功', list)
 	}
 
 	// 新增标签
 	async add() {
 		const { ctx, service } = this
-		let message = ''
 
 		try {
 			ctx.validate({
-				name: { type: 'string' },
+				name: { type: 'string', desc: '标签name' },
 			})
 		} catch (err) {
 			console.error(err)
-			message = JSON.stringify(err.errors)
+			return this.error(JSON.stringify(err.errors))
 		}
 
-		if (!message) {
-			const res = await service.blog.articleLabel.add(ctx.request.body).catch(err => {
-				if (err && err.errors[0] && err.errors[0].message) {
-					message = err.errors[0].message
-				}
-			})
-			console.log(res)
-			if (res) {
-				return this.success(true, '新建成功')
-			}
+		// 新建标签
+		try {
+			await service.blog.articleLabel.add(ctx.request.body)
+		} catch (err) {
+			console.error(err)
+			return this.error('新建标签失败')
 		}
 
-		this.success(false, message)
+		this.success('新建成功')
 	}
-	// 更新
+
+	// 更新标签
 	async update() {
 		const { ctx, service } = this
-		let message = ''
 
+		// 必传id和name属性
 		try {
 			ctx.validate({
-				id: { type: 'number' },
-				name: { type: 'string' },
+				id: { type: 'number', desc: '标签id' },
+				name: { type: 'string', desc: '标签name' },
 			})
 		} catch (err) {
 			console.error(err.errors)
-			message = JSON.stringify(err.errors)
+			return this.error(JSON.stringify(err.errors))
 		}
 
-		if (!message) {
-			const res = await service.blog.articleLabel
-				.update(ctx.request.body, ctx.request.body.id)
-				.catch(err => {
-					message = JSON.stringify(err)
-				})
-			if (res) {
-				return this.success(true, '更新成功')
-			}
+		try {
+			await service.blog.articleLabel.update(ctx.request.body, ctx.request.body.id)
+		} catch (err) {
+			console.log(err)
+			this.error('更新标签失败')
 		}
 
-		this.success(false, message)
+		this.success('更新成功')
 	}
+
 	// 删除
 	async delete() {
 		const { ctx, service } = this
-		let message = ''
-
 		try {
 			ctx.validate(
 				{
@@ -106,22 +106,27 @@ class LabelManageController extends BaseController {
 			)
 		} catch (err) {
 			console.error(err.errors)
-			message = JSON.stringify(err.errors)
+			return this.error(JSON.stringify(err.errors))
 		}
 
-		if (!message) {
-			const res = await service.blog.articleLabel.delete(ctx.query.id).catch(err => {
-				message = JSON.stringify(err)
-			})
+		// 清理文章中的标签
+		try {
+			console.log('xxx')
+			await service.blog.articleLabel.deleteLableInArticles(ctx.query.id)
+		} catch (err) {
+			console.error(err)
 
-			if (res) {
-				return this.success(true, '删除成功')
-			} else {
-				return this.success(false, '标签不存在')
-			}
-		} else {
-			this.success(false, message)
+			return this.error('文章标签清理失败')
 		}
+
+		try {
+			await service.blog.articleLabel.delete(ctx.query.id)
+		} catch (error) {
+			console.error(err.errors)
+			return this.error('删除失败')
+		}
+
+		this.success('删除成功')
 	}
 }
 

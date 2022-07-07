@@ -1,6 +1,6 @@
 const { Service } = require('egg')
 const { Op } = require('sequelize')
-
+const _ = require('lodash')
 class LabelManageService extends Service {
 	// 获取标签列表
 	async list() {
@@ -42,6 +42,7 @@ class LabelManageService extends Service {
 		const article = await this.ctx.model.Articlelabels.create(newLabel)
 		return true
 	}
+
 	// 更新
 	async update(newLabel, id) {
 		const res = await this.ctx.model.Articlelabels.update(newLabel, {
@@ -54,6 +55,7 @@ class LabelManageService extends Service {
 
 		return true
 	}
+
 	// 删除
 	async delete(id) {
 		console.log(id)
@@ -66,25 +68,85 @@ class LabelManageService extends Service {
 		return res ? true : false
 	}
 
+	// 通过id查找标签实例
+	async findById(id) {
+		const labelInstance = await this.ctx.model.Articlelabels.findOne({
+			where: {
+				id,
+			},
+		})
+
+		return labelInstance
+	}
+
 	// 检测标签是否存在，不存在则新建
 	async checkLabelsExistence(labelsStr) {
 		if (!labelsStr) return false
 
 		const labels = labelsStr.split(',')
 		labels.forEach(async label => {
+			const [res, created] = await this.ctx.model.Articlelabels.findOrCreate({
+				where: {
+					name: label,
+				},
+				defaults: {
+					article_count: 1,
+				},
+			})
+
+			if (!created) {
+				// 存在则对应+1
+				res.article_count += 1
+				await res.save()
+			}
+		})
+	}
+
+	// 更新labels的计数
+	async updateLabelsCount(oldStr, newStr) {
+		const { ctx } = this
+		let oldLablesArr = oldStr.split(',')
+		let newLablesArr = newStr.split(',')
+		const delArr = _.difference(oldLablesArr, newLablesArr)
+		const addArr = _.difference(newLablesArr, oldLablesArr)
+
+		delArr.forEach(async label => {
 			const res = await this.ctx.model.Articlelabels.findOne({
 				where: {
 					name: label,
 				},
 			})
 
-			if (!res) {
-				// 标签不存在则新建
-				this.ctx.model.Articlelabels.create({
-					name: label,
-				})
+			// 存在则对应-1
+			if (res && res.article_count > 0) {
+				res.article_count -= 1
+				await res.save()
+			} else {
+				throw new Error(`标签${lable}不存在`)
 			}
 		})
+
+		await this.checkLabelsExistence(addArr.join(','))
+	}
+
+	async deleteLableInArticles(id) {
+		const label = await this.findById(id)
+		const articles = await this.ctx.model.Article.findAll({
+			where: {
+				labels: {
+					[Op.like]: `%${label.name}%`,
+				},
+			},
+		})
+
+		for (let article of articles) {
+			let labelsArr = article.labels ? article.labels.split(',') : []
+
+			labelsArr = labelsArr.filter(item => item !== label.name)
+			article.labels = labelsArr.join(',')
+
+			await article.save()
+		}
 	}
 }
 

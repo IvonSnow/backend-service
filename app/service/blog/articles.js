@@ -1,5 +1,5 @@
 const { Service } = require('egg')
-const { Op } = require("sequelize");
+const { Op } = require('sequelize')
 
 class ArticleManageService extends Service {
 	// 获取文章列表
@@ -7,7 +7,7 @@ class ArticleManageService extends Service {
 		const { ctx } = this
 
 		const list = await ctx.model.Article.findAll({
-			order: [['updated_at', 'DESC']]
+			order: [['updated_at', 'DESC']],
 		})
 		return list
 	}
@@ -18,17 +18,23 @@ class ArticleManageService extends Service {
 		const list = await ctx.model.Article.findAll({
 			where: {
 				[Op.or]: [
-					{title: {
-						[Op.like]: `%${keyword}%`
-					},},
-					{abstract: {
-						[Op.like]: `%${keyword}%`
-					},},
-					{content_html: {
-						[Op.like]: `%${keyword}%`
-					},}
-				]
-			}
+					{
+						title: {
+							[Op.like]: `%${keyword}%`,
+						},
+					},
+					{
+						abstract: {
+							[Op.like]: `%${keyword}%`,
+						},
+					},
+					{
+						content_html: {
+							[Op.like]: `%${keyword}%`,
+						},
+					},
+				],
+			},
 		})
 
 		return list
@@ -44,9 +50,11 @@ class ArticleManageService extends Service {
 
 	// 新增文章
 	async add(newArticle) {
-		const article = await this.ctx.model.Article.create(newArticle)
-		return true
+		const { ctx } = this
+
+		await ctx.model.Article.create(newArticle)
 	}
+
 	// 更新
 	async update(newArticle, id) {
 		const res = await this.ctx.model.Article.update(newArticle, {
@@ -55,12 +63,32 @@ class ArticleManageService extends Service {
 			},
 		})
 
-		console.log(res)
-
 		return true
 	}
+
+	// 通过id查找文章实例
+	async findById(id) {
+		const { ctx } = this
+
+		const article = await ctx.model.Article.findOne({
+			where: {
+				article_id: id,
+			},
+		})
+
+		return article
+	}
+
 	// 删除
-	async delete() {}
+	async delete(id) {
+		const { ctx } = this
+
+		await ctx.model.Article.destroy({
+			where: {
+				article_id: id,
+			},
+		})
+	}
 }
 
 module.exports = ArticleManageService

@@ -7,9 +7,14 @@ class ArticleManageController extends BaseController {
 	// 获取文章列表
 	async list() {
 		const { ctx } = this
+		let list = []
+		try {
+			list = await ctx.service.blog.articles.list()
+		} catch (err) {
+			return this.error('文章列表获取失败')
+		}
 
-		let list = await ctx.service.blog.articles.list()
-		ctx.body = list
+		this.success('成功', list)
 	}
 
 	// 根据关键词（标题，标签，描述，内容），搜索文章
@@ -18,10 +23,9 @@ class ArticleManageController extends BaseController {
 
 		if (ctx.query && ctx.query.keyword) {
 			let list = await ctx.service.blog.articles.search(ctx.query.keyword)
-			this.success(true, '成功', list ? list : [])
-		} 
-		else {
-			this.success(false, '请传递关键词')
+			this.success('成功', list ? list : [])
+		} else {
+			this.error('请传递关键词')
 		}
 	}
 
@@ -31,12 +35,12 @@ class ArticleManageController extends BaseController {
 		if (ctx.query && ctx.query.id) {
 			let article = await ctx.service.blog.articles.detail(ctx.query.id)
 			if (article) {
-				this.success(true, '成功', article)
+				this.success('成功', article)
 			} else {
-				this.success(false, '文章不存在')
+				this.error('文章不存在')
 			}
 		} else {
-			this.success(false, '文章id必传')
+			this.error('文章id必传')
 		}
 	}
 
@@ -44,6 +48,7 @@ class ArticleManageController extends BaseController {
 	async add() {
 		const { ctx, service } = this
 
+		// 解构文章
 		let newArticle = {
 			title: ctx.request.body.title,
 			author: 'xueyunfeng',
@@ -59,20 +64,54 @@ class ArticleManageController extends BaseController {
 			status: 0,
 		}
 
-		let message = ''
-		const res = await service.blog.articles.add(newArticle).catch(err => {
-			if (err && err.errors[0] && err.errors[0].message) message = err.errors[0].message
-		})
-		console.log(res)
-		if (res) {
-			service.blog.articleLabel.checkLabelsExistence(newArticle.labels)
-			this.success(true, '新建成功')
+		// 检测标签, 不存在的就新建
+		try {
+			await service.blog.articleLabel.checkLabelsExistence(newArticle.labels)
+		} catch (err) {
+			console.error(err)
+			return this.error('创建文章标签失败')
 		}
-		this.success(false, message)
+
+		// 创建文章
+		try {
+			await service.blog.articles.add(newArticle)
+		} catch (err) {
+			console.error(err)
+			return this.error('文章创建失败')
+		}
+
+		this.success('新建成功')
 	}
+
+	// 删除
+	async delete() {
+		const { ctx, service } = this
+
+		const article = await service.blog.articles.findById(ctx.query.id)
+
+		// 对应删除标签
+		try {
+			await service.blog.articleLabel.updateLabelsCount(article.labels, '')
+		} catch (err) {
+			console.error(err)
+			return this.error('无法清理对应标签')
+		}
+
+		// 删除文章
+		try {
+			await service.blog.articles.delete(ctx.query.id)
+		} catch (err) {
+			console.error(err)
+			return this.error('删除文章失败')
+		}
+
+		this.success('删除成功')
+	}
+
 	// 更新
 	async update() {
 		const { ctx, service } = this
+		const articleId = ctx.request.body.id
 
 		let newArticle = {
 			title: ctx.request.body.title,
@@ -83,23 +122,24 @@ class ArticleManageController extends BaseController {
 			content_html: ctx.request.body.htmlContent,
 		}
 
-		const res = await service.blog.articles.update(newArticle, ctx.request.body.id)
-		if (res) {
-			service.blog.articleLabel.checkLabelsExistence(newArticle.labels)
-			this.success(true, '更新成功')
+		// 更新标签
+		try {
+			const article = await service.blog.articles.findById(articleId)
+			await service.blog.articleLabel.updateLabelsCount(article.labels, newArticle.labels)
+		} catch (err) {
+			console.error(err)
+			return this.error('更新标签数据失败')
 		}
-	}
-	// 删除
-	async delete() {
-		const { ctx } = this
 
-		ctx.model.Article.destroy({
-			where: {
-				article_id: ctx.query.id,
-			},
-		})
+		// 更新文章
+		try {
+			await service.blog.articles.update(newArticle, articleId)
+		} catch (err) {
+			console.error(err)
+			return this.error('更新文章失败')
+		}
 
-		this.success(true, '删除成功')
+		this.success('更新成功')
 	}
 }
 

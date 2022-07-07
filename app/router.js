@@ -33,4 +33,5 @@ module.exports = app => {
 	router.get('/front/blog/articles/list', controller.blog.articleManage.list)
 	router.get('/front/blog/articles/search', controller.blog.articleManage.search)
 	router.get('/front/blog/articleLabels/recommend', controller.blog.labelManage.recommend)
+	router.get('/front/blog/articles/detail', controller.blog.articleManage.detail)
 }

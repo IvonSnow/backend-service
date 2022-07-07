@@ -26,12 +26,7 @@ module.exports = appInfo => {
 		timezone: '+08:00',
 	}
 
-	config.validate = {
-		convert: true,
-	}
-
 	return {
 		...config,
-		...userConfig,
 	}
 }

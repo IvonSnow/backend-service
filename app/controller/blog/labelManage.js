@@ -128,6 +128,20 @@ class LabelManageController extends BaseController {
 
 		this.success('删除成功')
 	}
+
+	async total() {
+		const { service } = this
+		let total = 0
+
+		try {
+			total = await service.blog.articleLabel.total()
+		} catch (err) {
+			console.error(err)
+			return this.error('获取标签总数失败')
+		}
+
+		this.success('成功', total)
+	}
 }
 
 module.exports = LabelManageController

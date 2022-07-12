@@ -148,6 +148,13 @@ class LabelManageService extends Service {
 			await article.save()
 		}
 	}
+
+	// 总数
+	async total() {
+		const { ctx } = this
+
+		return await ctx.model.Articlelabels.count()
+	}
 }
 
 module.exports = LabelManageService

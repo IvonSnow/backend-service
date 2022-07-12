@@ -33,5 +33,9 @@ module.exports = app => {
 	router.get('/front/blog/articles/list', controller.blog.articleManage.list)
 	router.get('/front/blog/articles/search', controller.blog.articleManage.search)
 	router.get('/front/blog/articleLabels/recommend', controller.blog.labelManage.recommend)
+	router.get('/front/blog/articleLabels/total', controller.blog.labelManage.total)
 	router.get('/front/blog/articles/detail', controller.blog.articleManage.detail)
+	router.get('/front/blog/articles/total', controller.blog.articleManage.total)
+	// 本年的博客
+	router.get('/front/blog/articles/heat', controller.blog.articleManage.heatmap)
 }

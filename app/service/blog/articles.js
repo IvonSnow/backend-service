@@ -1,5 +1,6 @@
 const { Service } = require('egg')
 const { Op } = require('sequelize')
+const sequelize = require('sequelize')
 
 class ArticleManageService extends Service {
 	// 获取文章列表
@@ -88,6 +89,43 @@ class ArticleManageService extends Service {
 				article_id: id,
 			},
 		})
+	}
+
+	// 总数
+	async total() {
+		const { ctx } = this
+
+		return await ctx.model.Article.count()
+	}
+
+	// 热力图
+	async heatmap(year) {
+		const { ctx } = this
+		console.log(parseInt(year) + 1)
+
+		const articles = await ctx.model.Article.findAll({
+			attributes: [
+				[sequelize.fn('COUNT', sequelize.col('created_at')), 'sum'],
+				[
+					sequelize.fn('DATE_FORMAT', sequelize.col('created_at'), '%Y-%m-%d'),
+					'created_at',
+				],
+			],
+			where: {
+				updated_at: {
+					[Op.between]: [year, parseInt(year) + 1 + ''],
+				},
+			},
+			group: [
+				sequelize.Sequelize.fn(
+					'DATE_FORMAT',
+					sequelize.Sequelize.col('created_at'),
+					'%Y-%m-%d'
+				),
+			],
+		})
+
+		return articles
 	}
 }
 

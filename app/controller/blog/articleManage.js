@@ -141,6 +141,37 @@ class ArticleManageController extends BaseController {
 
 		this.success('更新成功')
 	}
+
+	async total() {
+		const { service } = this
+		let total = 0
+
+		try {
+			total = await service.blog.articles.total()
+		} catch (err) {
+			console.error(err)
+			return this.error('获取博客总数失败')
+		}
+
+		this.success('成功', total)
+	}
+
+	async heatmap() {
+		const { ctx, service } = this
+
+		const year = ctx.query.year
+		if (!year) return this.error('没有传递参数year')
+		let data = []
+
+		try {
+			data = await service.blog.articles.heatmap(year)
+		} catch (err) {
+			console.error(err)
+			return this.error('获取heatmap数据失败')
+		}
+
+		this.success('成功', data)
+	}
 }
 
 module.exports = ArticleManageController

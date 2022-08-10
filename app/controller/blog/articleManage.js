@@ -7,14 +7,40 @@ class ArticleManageController extends BaseController {
 	// 获取文章列表
 	async list() {
 		const { ctx } = this
-		let list = []
+
+		let limit = {}
+		limit.label = ctx.query.label || ''
 		try {
-			list = await ctx.service.blog.articles.list()
+			limit.pageSize = isNaN(parseInt(ctx.query.pageSize)) ? 10 : parseInt(ctx.query.pageSize)
 		} catch (err) {
+			console.log('pageSize不是合法非零整数：' + ctx.query.pageSize)
+		}
+		try {
+			limit.currentPage = isNaN(parseInt(ctx.query.currentPage))
+				? 1
+				: parseInt(ctx.query.currentPage)
+		} catch (err) {
+			console.log('currentPage不是合法非零整数：' + ctx.query.currentPage)
+		}
+
+		let result = {}
+		try {
+			const res = await ctx.service.blog.articles.list(limit)
+			result = {
+				pagination: {
+					currentPage: limit.currentPage,
+					pageSize: limit.pageSize,
+					total: res.count,
+				},
+
+				list: res.rows,
+			}
+		} catch (err) {
+			console.log(err)
 			return this.error('文章列表获取失败')
 		}
 
-		this.success('成功', list)
+		this.success('成功', result)
 	}
 
 	// 根据关键词（标题，标签，描述，内容），搜索文章

@@ -4,13 +4,17 @@ const sequelize = require('sequelize')
 
 class ArticleManageService extends Service {
 	// 获取文章列表
-	async list() {
+	async list({ currentPage, pageSize, label }) {
 		const { ctx } = this
 
-		const list = await ctx.model.Article.findAll({
+		const { count, rows } = await ctx.model.Article.findAndCountAll({
 			order: [['updated_at', 'DESC']],
+			limit: pageSize,
+			offset: (currentPage - 1) * pageSize,
+			where: label ? sequelize.fn('FIND_IN_SET', label, sequelize.col('labels')) : {},
 		})
-		return list
+
+		return { count, rows }
 	}
 
 	async search(keyword) {
